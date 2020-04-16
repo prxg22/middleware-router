@@ -6,7 +6,7 @@ const runMiddlewares = (middlewares, args, i = 0) => {
   const middleware = middlewares[i]
 
   if (!middleware) return Promise.resolve()
-  return middleware().then(next)
+  return (middleware(args) || Promise.resolve()).then(next)
 }
 
 class RedirectError extends Error {
@@ -17,7 +17,7 @@ class RedirectError extends Error {
 }
 
 const Route = ({
-  middlewares = [],
+  middlewares,
   loading = null,
   path,
   component: Component,
@@ -27,9 +27,14 @@ const Route = ({
   const history = useHistory()
 
   React.useEffect(() => {
+    if (!middlewares || !middlewares.length) {
+      toggle()
+      return
+    }
+
     const evaluateMiddlewares = async () => {
       const redirect = path => {
-        throw RedirectError(path)
+        throw new RedirectError(path)
       }
 
       try {
@@ -50,7 +55,7 @@ const Route = ({
     }
 
     evaluateMiddlewares()
-  }, [history, middlewares])
+  }, [history])
 
   if (running) return loading
   return <ReactRouterRoute {...props} />
