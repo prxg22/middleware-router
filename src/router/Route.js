@@ -32,6 +32,14 @@ const Route = ({
       return
     }
 
+    const routePaths = path.split('/')
+    const locationPaths = history.location.pathname.split('/')
+    const params = routePaths.reduce((params, path, index) => {
+      if (path[0] === ':')
+        return { ...params, [path.slice(1)]: locationPaths[index] }
+      return params
+    }, {})
+
     const evaluateMiddlewares = async () => {
       const redirect = path => {
         throw new RedirectError(path)
@@ -40,7 +48,7 @@ const Route = ({
       try {
         await runMiddlewares(middlewares, {
           redirect,
-          path: history.location.path,
+          location: { ...history.location, params },
         })
 
         toggle()

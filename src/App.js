@@ -6,40 +6,64 @@ import {
   Link,
 } from 'react-router-dom'
 import Route from './router/Route'
+import injectState from './router/injectState'
+import { getPokemon, getPokemons } from './service'
+
 import './styles.css'
 
-const wait = time => new Promise(res => setTimeout(res, time))
+const PokemonsPage = ({ state }) => {
+  const { pokemons = [] } = state
 
-const PageA = ({ counter }) => <div>pageA</div>
-const PageB = ({ counter, increment }) => (
-  <div>
-    {counter} <button onClick={increment}>increment</button>
-    {counter > 10 ? <Link to="/a">Ir para a A</Link> : null}
-  </div>
-)
+  return (
+    <div>
+      {pokemons.map(p => (
+        <Link to={`/pokemon/${p.name}`}>
+          <p>{p.name}</p>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+const PokemonPage = ({ state }) => {
+  const { pokemon = [] } = state
+
+  return (
+    <div>
+      {pokemon.id} - {pokemon.name} - {pokemon.types.map(t => t.name).join('/')}
+    </div>
+  )
+}
+
+const getPokemonsMiddleware = async ({ setState }) => {
+  const pokemons = await getPokemons()
+  setState({ pokemons })
+}
+
+const getPokemonMiddleware = async ({ location, setState }) => {
+  const { name = '' } = location.params || {}
+  const pokemon = await getPokemon(name)
+  console.log(pokemon)
+  setState({ pokemon })
+}
 
 const routes = [
   {
-    path: '/a',
-    component: PageA,
-    middlewares: [
-      ({ redirect, counter }) => {
-        if (counter > 10) return
-        redirect('/b')
-      },
-    ],
+    path: '/pokemons',
+    component: PokemonsPage,
+    middlewares: [getPokemonsMiddleware],
   },
   {
-    path: '/b',
-    component: PageB,
-    middlewares: [],
+    path: '/pokemon/:name',
+    component: PokemonPage,
+    middlewares: [getPokemonMiddleware],
   },
 ]
 
 export default function App() {
-  const [counter, increment] = useReducer(state => state + 1, 0)
-
-  const injectState = middleware => args => middleware({ ...args, counter })
+  const [state, setState] = useReducer((state, obj) => ({ ...state, ...obj }), {
+    txt: '',
+  })
 
   return (
     <Router>
@@ -47,15 +71,19 @@ export default function App() {
         {routes.map(({ path, component: Component, middlewares }) => {
           return (
             <Route
+              exact
               path={path}
-              middlewares={middlewares.map(injectState)}
+              middlewares={injectState(middlewares, state, setState)}
               key={path}
               loading={'loading...'}
             >
-              <Component counter={counter} increment={increment} />
+              <Component state={state} />
             </Route>
           )
         })}
+        <Route>
+          <Redirect to="/pokemons" />
+        </Route>
       </Switch>
     </Router>
   )
