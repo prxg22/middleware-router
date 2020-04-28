@@ -1,5 +1,5 @@
 {
-  "name": "react",
+  "name": "middleware-router",
   "version": "1.0.0",
   "description": "React example starter project",
   "keywords": [
@@ -8,10 +8,11 @@
   ],
   "main": "src/index.js",
   "dependencies": {
-    "react": "16.12.0",
+    "@lemonenergy/utils": "^0.2.1",
+    "react": "^16.13.1",
     "react-dom": "16.12.0",
-    "react-router": "5.1.2",
-    "react-router-dom": "5.1.2",
+    "react-router": "^5.1.2",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "3.0.1"
   },
   "devDependencies": {

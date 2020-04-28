@@ -1,18 +1,18 @@
-import React, { useReducer } from 'react'
+import React from 'react'
 import {
   BrowserRouter as Router,
   Switch,
   Redirect,
   Link,
 } from 'react-router-dom'
-import Route from './router/Route'
-import injectState from './router/injectState'
+import { Route, injectState } from '@lemonenergy/utils/dist/router'
+import { useGlobalState } from '@lemonenergy/utils/dist/hooks'
 import { getPokemon, getPokemons } from './service'
 
 import './styles.css'
 
-const PokemonsPage = ({ state }) => {
-  const { pokemons = [] } = state
+const PokemonsPage = () => {
+  const [{ pokemons = [] }] = useGlobalState()
 
   return (
     <div>
@@ -26,7 +26,7 @@ const PokemonsPage = ({ state }) => {
 }
 
 const PokemonPage = ({ state }) => {
-  const { pokemon = [] } = state
+  const [{ pokemon = [] }] = useGlobalState()
 
   return (
     <div>
@@ -40,11 +40,21 @@ const getPokemonsMiddleware = async ({ setState }) => {
   setState({ pokemons })
 }
 
-const getPokemonMiddleware = async ({ location, setState }) => {
+const getPokemonMiddleware = async ({
+  location,
+  redirect,
+  setState,
+  getState,
+}) => {
+  const { pokemons } = getState()
   const { name = '' } = location.params || {}
-  const pokemon = await getPokemon(name)
-  console.log(pokemon)
-  setState({ pokemon })
+
+  try {
+    const pokemon = await getPokemon(name)
+    setState({ pokemon })
+  } catch (e) {
+    redirect('/pokemons')
+  }
 }
 
 const routes = [
@@ -61,10 +71,7 @@ const routes = [
 ]
 
 export default function App() {
-  const [state, setState] = useReducer((state, obj) => ({ ...state, ...obj }), {
-    txt: '',
-  })
-
+  const [state, setState] = useGlobalState()
   return (
     <Router>
       <Switch>
@@ -77,7 +84,7 @@ export default function App() {
               key={path}
               loading={'loading...'}
             >
-              <Component state={state} />
+              <Component />
             </Route>
           )
         })}
